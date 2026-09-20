@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Activity, ArrowRight, Brain, Check, ChevronRight, Clock3, Compass, Database, Headphones, HeartPulse, LoaderCircle, LockKeyhole, Moon, RotateCcw, ShieldCheck, Sparkles, Utensils, Users, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -22,7 +22,10 @@ const voiceLanguages = [{ code: "en-IN", label: "EN" }, { code: "hi-IN", label: 
 
 export default function Home() {
   const [checkIn, setCheckIn] = useState<CheckIn>({ mentalLoad: 6, energy: 4, minutes: 3, pillar: "choose" });
-  const [outcomes, setOutcomes] = useState<Outcome[]>([]);
+  const [outcomes, setOutcomes] = useState<Outcome[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem(storageKey) || "[]") as Outcome[]; } catch { return []; }
+  });
   const [demoMode, setDemoMode] = useState(false);
   const [created, setCreated] = useState(false);
   const [guided, setGuided] = useState(false);
@@ -44,10 +47,6 @@ export default function Home() {
   const matchScore = Math.min(99, Math.round(72 + result.score / 5));
 
   useEffect(() => {
-    try { setOutcomes(JSON.parse(localStorage.getItem(storageKey) || "[]")); } catch { setOutcomes([]); }
-  }, []);
-
-  useEffect(() => {
     if (!guided || completed || secondsLeft <= 0) return;
     const timer = window.setInterval(() => setSecondsLeft(value => {
       if (value <= 1) { window.clearInterval(timer); setCompleted(true); return 0; }
@@ -56,9 +55,24 @@ export default function Home() {
     return () => window.clearInterval(timer);
   }, [guided, completed, secondsLeft]);
 
+  const speakStep = useCallback(async (text: string) => {
+    audioRef.current?.pause(); setVoiceState("loading");
+    try {
+      const response = await fetch("/api/voice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, language: voiceLanguage }) });
+      if (response.status === 503) { setVoiceState("missing"); return; }
+      if (!response.ok) { setVoiceState("error"); return; }
+      const payload = await response.json() as { audio: string };
+      const audio = new Audio(`data:audio/wav;base64,${payload.audio}`); audioRef.current = audio;
+      audio.onended = () => setVoiceState("idle"); audio.onerror = () => setVoiceState("error");
+      setVoiceState("speaking"); await audio.play();
+    } catch { setVoiceState("error"); }
+  }, [voiceLanguage]);
+
   useEffect(() => {
-    if (guided && !completed && voiceEnabled) void speakStep(result.intervention.steps[activeStep]);
-  }, [activeStep, guided, completed, voiceEnabled, voiceLanguage]);
+    if (!guided || completed || !voiceEnabled) return;
+    const cue = window.setTimeout(() => { void speakStep(result.intervention.steps[activeStep]); }, 0);
+    return () => window.clearTimeout(cue);
+  }, [activeStep, guided, completed, voiceEnabled, result.intervention.steps, speakStep]);
 
   useEffect(() => {
     const context = (document as Document & { modelContext?: { registerTool: (tool: unknown, options?: { signal?: AbortSignal }) => void | Promise<void> } }).modelContext;
@@ -94,24 +108,11 @@ export default function Home() {
     if (!demoMode) localStorage.setItem(storageKey, JSON.stringify(next));
     setGuided(false); setCreated(true);
   }
-  async function speakStep(text: string) {
-    audioRef.current?.pause(); setVoiceState("loading");
-    try {
-      const response = await fetch("/api/voice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, language: voiceLanguage }) });
-      if (response.status === 503) { setVoiceState("missing"); return; }
-      if (!response.ok) { setVoiceState("error"); return; }
-      const payload = await response.json() as { audio: string };
-      const audio = new Audio(`data:audio/wav;base64,${payload.audio}`); audioRef.current = audio;
-      audio.onended = () => setVoiceState("idle"); audio.onerror = () => setVoiceState("error");
-      setVoiceState("speaking"); await audio.play();
-    } catch { setVoiceState("error"); }
-  }
-
   return (
     <main className="min-h-screen overflow-hidden bg-[#061816] text-[#f4f4ec]">
       <div className="pointer-events-none fixed inset-0 opacity-80 [background:radial-gradient(circle_at_18%_12%,rgba(184,255,92,.13),transparent_26%),radial-gradient(circle_at_88%_76%,rgba(255,111,79,.12),transparent_30%)]" />
       <header className="relative mx-auto flex max-w-[1480px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
-        <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-[#b8ff5c] text-[#061816]"><HeartPulse className="size-5" strokeWidth={2.5} /></span><div><p className="text-lg font-semibold tracking-[-0.04em]">minute zero <span className="font-normal text-[#637b75]">// WQ intelligence</span></p><p className="text-xs text-[#93aaa4]">an adaptive wellness response layer</p></div></div>
+        <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-[#b8ff5c] text-[#061816]"><HeartPulse className="size-5" strokeWidth={2.5} /></span><div><p className="text-lg font-semibold tracking-[-0.04em]">minute zero <span className="font-normal text-[#637b75]">{"//"} WQ intelligence</span></p><p className="text-xs text-[#93aaa4]">an adaptive wellness response layer</p></div></div>
         <div className="flex items-center gap-2"><button onClick={loadDemo} className={`rounded-full border px-3 py-2 text-xs transition ${demoMode ? "border-[#ff6f4f]/50 bg-[#ff6f4f]/10 text-[#ff9279]" : "border-white/10 text-[#93aaa4] hover:border-[#b8ff5c]/40 hover:text-[#b8ff5c]"}`}>{demoMode ? "Exit demo profile" : "Load judge demo"}</button><span className="hidden items-center gap-2 text-xs text-[#78908a] sm:flex"><LockKeyhole className="size-3.5" />On-device</span></div>
       </header>
 
