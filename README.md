@@ -26,6 +26,7 @@ Most wellness products prescribe generic routines. When someone is overloaded, t
 - **Response fingerprint:** the ranking learns from measured personal outcomes, not engagement metrics.
 - **Privacy by architecture:** outcomes are stored on-device; demo outcomes are never persisted; the coach signal contains no identity, journal text, or raw history.
 - **Human loop:** the product explicitly surfaces a coach-ready signal rather than pretending automation is always enough.
+- **Team Pulse:** with consent, only anonymous groups of five or more can surface a workload-risk trend, a concrete team action, and before/after recovery evidence.
 - **Multilingual voice guide:** Sarvam-powered cue playback supports English, Hindi, Kannada, Tamil, and Telugu when `SARVAM_API_KEY` is configured.
 
 ## Judge demo path
@@ -34,6 +35,7 @@ Most wellness products prescribe generic routines. When someone is overloaded, t
 2. See a personalized stress profile and an explainable Downshift recommendation.
 3. Open **Preview human handoff** to inspect the privacy-safe escalation signal.
 4. Start the reset, finish early, and record a new outcome to demonstrate the learning loop.
+5. Open **Team pulse** to show the privacy threshold, manager commitment, and impact tracker using labelled sample aggregate data.
 
 ## Tech
 
@@ -76,6 +78,7 @@ The automated suite includes 12 checks for:
 - response-fingerprint learning and confidence states
 - bounded, complete six-pillar signals
 - judge-demo behavior
+- team privacy threshold, intervention selection, and before/after impact measurement
 - voice secret safety, malformed requests, English synthesis, and multilingual translation-to-speech flow
 
 ## Safety note

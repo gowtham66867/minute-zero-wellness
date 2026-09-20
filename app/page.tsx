@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { type CheckIn, type Outcome, type Pillar, demoOutcomes, pillarSignals, recommend } from "@/lib/adaptive-engine";
+import { demoTeamPulse } from "@/lib/team-pulse";
 
 const pillarOptions: { id: Pillar | "choose"; label: string; short: string; icon: typeof Brain }[] = [
   { id: "stress", label: "Stress mastery", short: "Calm", icon: Brain },
@@ -36,6 +37,8 @@ export default function Home() {
   const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceState, setVoiceState] = useState<"idle" | "loading" | "speaking" | "missing" | "error">("idle");
+  const [teamPulseOpen, setTeamPulseOpen] = useState(false);
+  const [teamActionCommitted, setTeamActionCommitted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const result = useMemo(() => recommend(checkIn, outcomes), [checkIn, outcomes]);
@@ -113,7 +116,7 @@ export default function Home() {
       <div className="pointer-events-none fixed inset-0 opacity-80 [background:radial-gradient(circle_at_18%_12%,rgba(184,255,92,.13),transparent_26%),radial-gradient(circle_at_88%_76%,rgba(255,111,79,.12),transparent_30%)]" />
       <header className="relative mx-auto flex max-w-[1480px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
         <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-[#b8ff5c] text-[#061816]"><HeartPulse className="size-5" strokeWidth={2.5} /></span><div><p className="text-lg font-semibold tracking-[-0.04em]">minute zero <span className="font-normal text-[#637b75]">{"//"} adaptive wellness</span></p><p className="text-xs text-[#93aaa4]">a reset that learns what helps</p></div></div>
-        <div className="flex items-center gap-2"><button onClick={loadDemo} className={`rounded-full border px-3 py-2 text-xs transition ${demoMode ? "border-[#ff6f4f]/50 bg-[#ff6f4f]/10 text-[#ff9279]" : "border-white/10 text-[#93aaa4] hover:border-[#b8ff5c]/40 hover:text-[#b8ff5c]"}`}>{demoMode ? "Exit demo profile" : "Load judge demo"}</button><span className="hidden items-center gap-2 text-xs text-[#78908a] sm:flex"><LockKeyhole className="size-3.5" />On-device</span></div>
+        <div className="flex items-center gap-2"><button onClick={() => setTeamPulseOpen(!teamPulseOpen)} className={`rounded-full border px-3 py-2 text-xs transition ${teamPulseOpen ? "border-[#b8ff5c]/50 bg-[#b8ff5c]/10 text-[#b8ff5c]" : "border-white/10 text-[#93aaa4] hover:border-[#b8ff5c]/40 hover:text-[#b8ff5c]"}`}>Team pulse</button><button onClick={loadDemo} className={`rounded-full border px-3 py-2 text-xs transition ${demoMode ? "border-[#ff6f4f]/50 bg-[#ff6f4f]/10 text-[#ff9279]" : "border-white/10 text-[#93aaa4] hover:border-[#b8ff5c]/40 hover:text-[#b8ff5c]"}`}>{demoMode ? "Exit demo profile" : "Load judge demo"}</button><span className="hidden items-center gap-2 text-xs text-[#78908a] sm:flex"><LockKeyhole className="size-3.5" />On-device</span></div>
       </header>
 
       <div className="relative mx-auto grid max-w-[1480px] gap-8 px-5 pb-10 pt-3 sm:px-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(410px,.95fr)] lg:px-12 lg:pb-16 lg:pt-7">
@@ -134,6 +137,7 @@ export default function Home() {
               <div className="mt-5 space-y-4"><MoatLine number="01" title="Framework" text="Six wellness pillars constrain the AI." /><MoatLine number="02" title="Fingerprint" text={`${outcomes.length} private outcomes shape the ranking.`} /><MoatLine number="03" title="Human loop" text="A coach-ready signal appears when AI is not enough." /></div>
             </div>
           </div>
+          {teamPulseOpen && <TeamPulseCard committed={teamActionCommitted} onCommit={() => setTeamActionCommitted(true)} />}
         </section>
 
         <section className="order-1 self-start rounded-[2rem] border border-white/10 bg-[#0c2421]/95 p-5 shadow-2xl shadow-black/30 backdrop-blur sm:p-7 lg:order-2 lg:sticky lg:top-5">
@@ -196,6 +200,17 @@ function ResultPanel({ checkIn, result, matchScore, outcomes, coachSignal, setCo
 function CheckSlider({ label, value, low, high, onChange }: { label: string; value: number; low: string; high: string; onChange: (value: number[]) => void }) { return <div><div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium">{label}</label><span className="grid size-8 place-items-center rounded-full bg-white/5 text-sm text-[#b8ff5c]">{value}</span></div><Slider min={1} max={10} step={1} value={[value]} onValueChange={onChange} className="[&_[data-slot=slider-range]]:bg-[#b8ff5c] [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-[#b8ff5c] [&_[data-slot=slider-thumb]]:bg-[#0c2421]" aria-label={label} /><div className="mt-2 flex justify-between text-xs text-[#667d77]"><span>{low}</span><span>{high}</span></div></div>; }
 function Metric({ label, value, accent = false }: { label: string; value: string | number; accent?: boolean }) { return <div className={`rounded-xl p-3 text-center ${accent ? "bg-[#b8ff5c]/10" : "bg-white/5"}`}><p className="text-[11px] text-[#78908a]">{label}</p><p className={`mt-1 text-xl font-semibold ${accent ? "text-[#b8ff5c]" : ""}`}>{value}</p></div>; }
 function MoatLine({ number, title, text }: { number: string; title: string; text: string }) { return <div className="grid grid-cols-[28px_90px_1fr] gap-2 text-sm"><span className="font-mono text-[#b8ff5c]">{number}</span><span className="font-medium">{title}</span><span className="text-[#78908a]">{text}</span></div>; }
+function TeamPulseCard({ committed, onCommit }: { committed: boolean; onCommit: () => void }) {
+  const pulse = demoTeamPulse;
+  if (!pulse.visible || !pulse.focus || !pulse.action || pulse.signalRate === null || pulse.impactPoints === null) return null;
+  return <section className="mt-4 rounded-2xl border border-[#b8ff5c]/25 bg-[#0a211d] p-5 shadow-xl shadow-black/10">
+    <div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[.16em] text-[#78908a]">Team pulse · sample aggregate</p><h2 className="mt-1 text-xl font-semibold tracking-[-.04em]">Change the work, not the person.</h2></div><span className="rounded-full border border-[#b8ff5c]/30 bg-[#b8ff5c]/10 px-3 py-1 text-xs text-[#b8ff5c]">{pulse.contributors} anonymous check-ins</span></div>
+    <div className="mt-5 grid gap-3 sm:grid-cols-3"><Metric label={`${pulse.focus} signal`} value={`${pulse.signalRate}%`} accent /><Metric label="Recovery before" value="38%" /><Metric label="Recovery after" value="61%" accent /></div>
+    <div className="mt-4 rounded-xl border border-white/10 bg-white/[.025] p-4"><p className="text-xs uppercase tracking-[.14em] text-[#78908a]">Recommended team action</p><p className="mt-2 text-base font-medium">{pulse.action}</p><p className="mt-1 text-sm text-[#93aaa4]">Projected learning target: +{pulse.impactPoints} points in recovery after the action.</p></div>
+    {!committed ? <Button onClick={onCommit} className="mt-4 h-12 w-full rounded-xl bg-[#b8ff5c] font-semibold text-[#061816] hover:bg-[#cdfd8f]">Commit this team action <ArrowRight className="size-4" /></Button> : <div className="mt-4 rounded-xl border border-[#b8ff5c]/25 bg-[#b8ff5c]/10 p-4"><div className="flex items-center gap-2 font-medium text-[#b8ff5c]"><Check className="size-4" />Action committed for this week</div><p className="mt-1 text-sm text-[#a9bbb6]">Owner: team lead · Review recovery trend after the protected window.</p></div>}
+    <p className="mt-4 text-xs leading-5 text-[#78908a]">Privacy guardrail: this view appears only after five or more consented check-ins. No names, journal text, or individual history are shown. Repeated low recovery offers an optional human check-in—never automatic reporting.</p>
+  </section>;
+}
 function SignalMap({ signals }: { signals: Record<Pillar, number> }) {
   const entries = Object.entries(signals) as [Pillar, number][]; const center = 82; const radius = 55; const points = entries.map(([, value], index) => { const angle = -Math.PI / 2 + index * Math.PI / 3; const r = radius * value / 10; return `${center + Math.cos(angle) * r},${center + Math.sin(angle) * r}`; }).join(" "); const frame = entries.map((_, index) => { const angle = -Math.PI / 2 + index * Math.PI / 3; return `${center + Math.cos(angle) * radius},${center + Math.sin(angle) * radius}`; }).join(" ");
   return <div className="grid grid-cols-[164px_1fr] items-center gap-3"><svg viewBox="0 0 164 164" className="size-40" role="img" aria-label="Six-pillar wellness signal map"><polygon points={frame} fill="none" stroke="rgba(255,255,255,.12)" /><polygon points={points} fill="rgba(184,255,92,.15)" stroke="#b8ff5c" strokeWidth="2" />{entries.map(([, value], index) => { const angle = -Math.PI / 2 + index * Math.PI / 3; return <circle key={index} cx={center + Math.cos(angle) * radius * value / 10} cy={center + Math.sin(angle) * radius * value / 10} r="3" fill="#ff6f4f" />; })}</svg><div className="space-y-1.5">{entries.map(([pillar, value]) => <div key={pillar} className="flex items-center justify-between gap-3 text-xs"><span className="capitalize text-[#78908a]">{pillar}</span><span>{value}/10</span></div>)}</div></div>;
