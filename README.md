@@ -1,4 +1,4 @@
-# Minute Zero // WQ Intelligence
+# Minute Zero // Adaptive Wellness
 
 Minute Zero is an adaptive wellness response layer for the moment before a person has the capacity for a full wellness routine. A 20-second check-in selects one small, coach-curated reset, measures the change, and learns what helps that individual next time—without turning private moments into a data product.
 
@@ -14,8 +14,8 @@ Most wellness products prescribe generic routines. When someone is overloaded, t
 
 ## How it works
 
-1. A user completes a private six-pillar WQ check-in in about 20 seconds.
-2. The WQ engine ranks interventions by pillar, current load, energy, available minutes, and prior local outcomes.
+1. A user completes a private six-pillar check-in in about 20 seconds.
+2. The adaptive engine ranks interventions by pillar, current load, energy, available minutes, and prior local outcomes.
 3. The user follows a one-, three-, five-, or ten-minute guided reset.
 4. They report the shift in mental load, creating an on-device response fingerprint.
 5. Future recommendations improve from that feedback, while a privacy-safe coach signal is available when human support is more appropriate.

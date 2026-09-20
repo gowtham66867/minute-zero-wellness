@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Minute Zero — Adaptive WQ Intelligence",
+  title: "Minute Zero — Adaptive Wellness",
   description: "A private six-pillar wellness response engine that learns which micro-interventions work for you.",
   icons: {
     icon: "/favicon.svg",

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { POST as voicePost } from "../app/api/voice/route.ts";
-import { demoOutcomes, pillarSignals, recommend, type CheckIn, type Outcome } from "../lib/wq-engine.ts";
+import { demoOutcomes, pillarSignals, recommend, type CheckIn, type Outcome } from "../lib/adaptive-engine.ts";
 
 const checkIn = (overrides: Partial<CheckIn> = {}): CheckIn => ({ mentalLoad: 6, energy: 5, minutes: 3, pillar: "choose", ...overrides });
 

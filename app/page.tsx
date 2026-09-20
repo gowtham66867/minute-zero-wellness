@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { type CheckIn, type Outcome, type Pillar, demoOutcomes, pillarSignals, recommend } from "@/lib/wq-engine";
+import { type CheckIn, type Outcome, type Pillar, demoOutcomes, pillarSignals, recommend } from "@/lib/adaptive-engine";
 
 const pillarOptions: { id: Pillar | "choose"; label: string; short: string; icon: typeof Brain }[] = [
   { id: "stress", label: "Stress mastery", short: "Calm", icon: Brain },
@@ -79,14 +79,14 @@ export default function Home() {
     if (!context?.registerTool) return;
     const lifecycle = new AbortController();
     void Promise.resolve(context.registerTool({
-      name: "configure_wq_reset",
-      title: "Configure WQ reset",
-      description: "Configure the visible six-pillar WQ check-in and generate an explainable adaptive reset.",
+      name: "configure_adaptive_reset",
+      title: "Configure adaptive reset",
+      description: "Configure the visible six-pillar check-in and generate an explainable adaptive reset.",
       inputSchema: { type: "object", properties: { mentalLoad: { type: "integer", minimum: 1, maximum: 10 }, energy: { type: "integer", minimum: 1, maximum: 10 }, minutes: { type: "integer", enum: [1, 3, 5, 10] }, pillar: { type: "string", enum: ["stress", "movement", "sleep", "nourishment", "connection", "purpose", "choose"] } }, required: ["mentalLoad", "energy", "minutes", "pillar"], additionalProperties: false },
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       execute(input: unknown) {
         const value = input as CheckIn;
-        if (!Number.isInteger(value.mentalLoad) || value.mentalLoad < 1 || value.mentalLoad > 10 || !Number.isInteger(value.energy) || value.energy < 1 || value.energy > 10 || ![1,3,5,10].includes(value.minutes) || !["stress","movement","sleep","nourishment","connection","purpose","choose"].includes(value.pillar)) throw new Error("Invalid WQ check-in");
+        if (!Number.isInteger(value.mentalLoad) || value.mentalLoad < 1 || value.mentalLoad > 10 || !Number.isInteger(value.energy) || value.energy < 1 || value.energy > 10 || ![1,3,5,10].includes(value.minutes) || !["stress","movement","sleep","nourishment","connection","purpose","choose"].includes(value.pillar)) throw new Error("Invalid wellness check-in");
         setCheckIn(value); setCreated(true);
         return { status: "configured", adaptive: true, visible: true };
       },
@@ -112,7 +112,7 @@ export default function Home() {
     <main className="min-h-screen overflow-hidden bg-[#061816] text-[#f4f4ec]">
       <div className="pointer-events-none fixed inset-0 opacity-80 [background:radial-gradient(circle_at_18%_12%,rgba(184,255,92,.13),transparent_26%),radial-gradient(circle_at_88%_76%,rgba(255,111,79,.12),transparent_30%)]" />
       <header className="relative mx-auto flex max-w-[1480px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
-        <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-[#b8ff5c] text-[#061816]"><HeartPulse className="size-5" strokeWidth={2.5} /></span><div><p className="text-lg font-semibold tracking-[-0.04em]">minute zero <span className="font-normal text-[#637b75]">{"//"} WQ intelligence</span></p><p className="text-xs text-[#93aaa4]">an adaptive wellness response layer</p></div></div>
+        <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-[#b8ff5c] text-[#061816]"><HeartPulse className="size-5" strokeWidth={2.5} /></span><div><p className="text-lg font-semibold tracking-[-0.04em]">minute zero <span className="font-normal text-[#637b75]">{"//"} adaptive wellness</span></p><p className="text-xs text-[#93aaa4]">a reset that learns what helps</p></div></div>
         <div className="flex items-center gap-2"><button onClick={loadDemo} className={`rounded-full border px-3 py-2 text-xs transition ${demoMode ? "border-[#ff6f4f]/50 bg-[#ff6f4f]/10 text-[#ff9279]" : "border-white/10 text-[#93aaa4] hover:border-[#b8ff5c]/40 hover:text-[#b8ff5c]"}`}>{demoMode ? "Exit demo profile" : "Load judge demo"}</button><span className="hidden items-center gap-2 text-xs text-[#78908a] sm:flex"><LockKeyhole className="size-3.5" />On-device</span></div>
       </header>
 
@@ -121,12 +121,12 @@ export default function Home() {
           <div className="max-w-3xl">
             <div className="mb-7 flex items-center gap-3 text-sm text-[#b8ff5c]"><span className="h-px w-8 bg-current" /><span>{demoMode ? "Sample response fingerprint loaded" : "From generic advice to personal evidence"}</span></div>
             <h1 className="max-w-4xl text-[clamp(3.15rem,7.4vw,7.2rem)] font-semibold leading-[.87] tracking-[-.075em]">The reset that learns <span className="text-[#ff6f4f]">what works for you.</span></h1>
-            <p className="mt-7 max-w-2xl text-base leading-7 text-[#a9bbb6] sm:text-lg">A six-pillar WQ check-in selects one coach-curated action, measures the shift, and improves the next recommendation—without turning your private moments into a data product.</p>
+            <p className="mt-7 max-w-2xl text-base leading-7 text-[#a9bbb6] sm:text-lg">A six-pillar check-in selects one coach-curated action, measures the shift, and improves the next recommendation—without turning your private moments into a data product.</p>
           </div>
 
           <div className="mt-10 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-[1fr_1.25fr]">
             <div className="rounded-2xl border border-white/10 bg-white/[.025] p-5">
-              <div className="mb-4 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.16em] text-[#78908a]">WQ signal map</p><p className="mt-1 text-sm text-[#b8ff5c]">{result.confidence} profile</p></div><Database className="size-4 text-[#78908a]" /></div>
+              <div className="mb-4 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.16em] text-[#78908a]">Wellness signal map</p><p className="mt-1 text-sm text-[#b8ff5c]">{result.confidence} profile</p></div><Database className="size-4 text-[#78908a]" /></div>
               <SignalMap signals={signals} />
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[.025] p-5">
@@ -165,7 +165,7 @@ export default function Home() {
 
 function CheckInPanel({ checkIn, update, onCreate }: { checkIn: CheckIn; update: <K extends keyof CheckIn>(key: K, value: CheckIn[K]) => void; onCreate: () => void }) {
   return <div>
-    <div className="mb-7 flex items-start justify-between gap-4"><div><p className="text-sm text-[#93aaa4]">20-second WQ check-in</p><h2 className="mt-1 text-2xl font-semibold tracking-[-.04em]">Read the moment, not the person.</h2></div><span className="rounded-full border border-[#b8ff5c]/25 bg-[#b8ff5c]/10 px-3 py-1 text-xs text-[#b8ff5c]">Private</span></div>
+    <div className="mb-7 flex items-start justify-between gap-4"><div><p className="text-sm text-[#93aaa4]">20-second check-in</p><h2 className="mt-1 text-2xl font-semibold tracking-[-.04em]">Read the moment, not the person.</h2></div><span className="rounded-full border border-[#b8ff5c]/25 bg-[#b8ff5c]/10 px-3 py-1 text-xs text-[#b8ff5c]">Private</span></div>
     <div className="space-y-6"><CheckSlider label="Mental load" value={checkIn.mentalLoad} low="Spacious" high="Overloaded" onChange={value => update("mentalLoad", value[0])} /><CheckSlider label="Available energy" value={checkIn.energy} low="Running low" high="Fully charged" onChange={value => update("energy", value[0])} />
       <div><div className="mb-3 flex items-center justify-between"><p className="text-sm font-medium">Which pillar needs support?</p><button onClick={() => update("pillar", "choose")} className={`text-xs ${checkIn.pillar === "choose" ? "text-[#b8ff5c]" : "text-[#78908a] hover:text-white"}`}>Choose for me</button></div><div className="grid grid-cols-3 gap-2">{pillarOptions.map(({ id, short, icon: Icon }) => <button key={id} title={pillarOptions.find(item => item.id === id)?.label} onClick={() => update("pillar", id)} className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border text-xs transition ${checkIn.pillar === id ? "border-[#b8ff5c] bg-[#b8ff5c] text-[#061816]" : "border-white/10 bg-white/[.025] text-[#a9bbb6] hover:border-white/25"}`}><Icon className="size-4" /><span>{short}</span></button>)}</div></div>
       <div><div className="mb-3 flex items-center justify-between"><p className="text-sm font-medium">Capacity available</p><span className="text-sm text-[#b8ff5c]">{checkIn.minutes} min</span></div><div className="grid grid-cols-4 gap-2">{[1,3,5,10].map(value => <button key={value} onClick={() => update("minutes", value as CheckIn["minutes"])} className={`rounded-xl border py-2.5 text-sm transition ${checkIn.minutes === value ? "border-[#ff6f4f] bg-[#ff6f4f] text-white" : "border-white/10 text-[#93aaa4] hover:border-white/25"}`}>{value}</button>)}</div></div>
@@ -179,7 +179,7 @@ function ResultPanel({ checkIn, result, matchScore, outcomes, coachSignal, setCo
   const average = result.matches ? result.averageShift.toFixed(1) : "—";
   return <div className="flex min-h-[650px] flex-col">
     <div className="mb-6 flex items-center justify-between"><button onClick={onAdjust} className="text-sm text-[#93aaa4] hover:text-white">← Adjust check-in</button><span className="rounded-full border border-[#b8ff5c]/25 bg-[#b8ff5c]/10 px-3 py-1 text-xs text-[#b8ff5c]">{matchScore}% match</span></div>
-    <div className="flex items-center gap-2 text-sm text-[#b8ff5c]"><Sparkles className="size-4" />WQ adaptive match · {result.pillar}</div>
+    <div className="flex items-center gap-2 text-sm text-[#b8ff5c]"><Sparkles className="size-4" />Adaptive match · {result.pillar}</div>
     <h2 className="mt-3 text-5xl font-semibold tracking-[-.06em]">{result.intervention.title}</h2><p className="mt-3 max-w-md leading-7 text-[#a9bbb6]">{result.intervention.promise}</p>
     <div className="mt-6 grid grid-cols-3 gap-2">{result.reasons.map(reason => <div key={reason} className="rounded-xl border border-white/10 bg-white/[.025] p-3 text-xs leading-5 text-[#9eb2ac]"><Check className="mb-2 size-3.5 text-[#b8ff5c]" />{reason}</div>)}</div>
     <ol className="my-7 space-y-4 border-y border-white/10 py-6">{result.intervention.steps.map((step, index) => <li key={step} className="flex gap-4"><span className="grid size-7 shrink-0 place-items-center rounded-full border border-white/15 text-xs text-[#b8ff5c]">{index + 1}</span><span className="pt-0.5 text-sm leading-6">{step}</span></li>)}</ol>
@@ -198,6 +198,6 @@ function Metric({ label, value, accent = false }: { label: string; value: string
 function MoatLine({ number, title, text }: { number: string; title: string; text: string }) { return <div className="grid grid-cols-[28px_90px_1fr] gap-2 text-sm"><span className="font-mono text-[#b8ff5c]">{number}</span><span className="font-medium">{title}</span><span className="text-[#78908a]">{text}</span></div>; }
 function SignalMap({ signals }: { signals: Record<Pillar, number> }) {
   const entries = Object.entries(signals) as [Pillar, number][]; const center = 82; const radius = 55; const points = entries.map(([, value], index) => { const angle = -Math.PI / 2 + index * Math.PI / 3; const r = radius * value / 10; return `${center + Math.cos(angle) * r},${center + Math.sin(angle) * r}`; }).join(" "); const frame = entries.map((_, index) => { const angle = -Math.PI / 2 + index * Math.PI / 3; return `${center + Math.cos(angle) * radius},${center + Math.sin(angle) * radius}`; }).join(" ");
-  return <div className="grid grid-cols-[164px_1fr] items-center gap-3"><svg viewBox="0 0 164 164" className="size-40" role="img" aria-label="Six pillar WQ signal map"><polygon points={frame} fill="none" stroke="rgba(255,255,255,.12)" /><polygon points={points} fill="rgba(184,255,92,.15)" stroke="#b8ff5c" strokeWidth="2" />{entries.map(([, value], index) => { const angle = -Math.PI / 2 + index * Math.PI / 3; return <circle key={index} cx={center + Math.cos(angle) * radius * value / 10} cy={center + Math.sin(angle) * radius * value / 10} r="3" fill="#ff6f4f" />; })}</svg><div className="space-y-1.5">{entries.map(([pillar, value]) => <div key={pillar} className="flex items-center justify-between gap-3 text-xs"><span className="capitalize text-[#78908a]">{pillar}</span><span>{value}/10</span></div>)}</div></div>;
+  return <div className="grid grid-cols-[164px_1fr] items-center gap-3"><svg viewBox="0 0 164 164" className="size-40" role="img" aria-label="Six-pillar wellness signal map"><polygon points={frame} fill="none" stroke="rgba(255,255,255,.12)" /><polygon points={points} fill="rgba(184,255,92,.15)" stroke="#b8ff5c" strokeWidth="2" />{entries.map(([, value], index) => { const angle = -Math.PI / 2 + index * Math.PI / 3; return <circle key={index} cx={center + Math.cos(angle) * radius * value / 10} cy={center + Math.sin(angle) * radius * value / 10} r="3" fill="#ff6f4f" />; })}</svg><div className="space-y-1.5">{entries.map(([pillar, value]) => <div key={pillar} className="flex items-center justify-between gap-3 text-xs"><span className="capitalize text-[#78908a]">{pillar}</span><span>{value}/10</span></div>)}</div></div>;
 }
 function formatTime(seconds: number) { const mins = Math.floor(seconds / 60); const secs = seconds % 60; return `${mins}:${String(secs).padStart(2, "0")}`; }
