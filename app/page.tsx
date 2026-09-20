@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Activity, ArrowRight, Brain, Check, ChevronRight, Clock3, Compass, Database, HeartPulse, LockKeyhole, Moon, RotateCcw, ShieldCheck, Sparkles, Utensils, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Activity, ArrowRight, Brain, Check, ChevronRight, Clock3, Compass, Database, Headphones, HeartPulse, LoaderCircle, LockKeyhole, Moon, RotateCcw, ShieldCheck, Sparkles, Utensils, Users, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +18,7 @@ const pillarOptions: { id: Pillar | "choose"; label: string; short: string; icon
 ];
 
 const storageKey = "minute-zero-outcomes-v2";
+const voiceLanguages = [{ code: "en-IN", label: "EN" }, { code: "hi-IN", label: "हिं" }, { code: "kn-IN", label: "ಕಂ" }, { code: "ta-IN", label: "த" }, { code: "te-IN", label: "తె" }] as const;
 
 export default function Home() {
   const [checkIn, setCheckIn] = useState<CheckIn>({ mentalLoad: 6, energy: 4, minutes: 3, pillar: "choose" });
@@ -29,6 +30,10 @@ export default function Home() {
   const [completed, setCompleted] = useState(false);
   const [after, setAfter] = useState(5);
   const [coachSignal, setCoachSignal] = useState(false);
+  const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [voiceState, setVoiceState] = useState<"idle" | "loading" | "speaking" | "missing" | "error">("idle");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const result = useMemo(() => recommend(checkIn, outcomes), [checkIn, outcomes]);
   const signals = useMemo(() => pillarSignals(checkIn, outcomes), [checkIn, outcomes]);
@@ -50,6 +55,10 @@ export default function Home() {
     }), 1000);
     return () => window.clearInterval(timer);
   }, [guided, completed, secondsLeft]);
+
+  useEffect(() => {
+    if (guided && !completed && voiceEnabled) void speakStep(result.intervention.steps[activeStep]);
+  }, [activeStep, guided, completed, voiceEnabled, voiceLanguage]);
 
   useEffect(() => {
     const context = (document as Document & { modelContext?: { registerTool: (tool: unknown, options?: { signal?: AbortSignal }) => void | Promise<void> } }).modelContext;
@@ -85,6 +94,18 @@ export default function Home() {
     if (!demoMode) localStorage.setItem(storageKey, JSON.stringify(next));
     setGuided(false); setCreated(true);
   }
+  async function speakStep(text: string) {
+    audioRef.current?.pause(); setVoiceState("loading");
+    try {
+      const response = await fetch("/api/voice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, language: voiceLanguage }) });
+      if (response.status === 503) { setVoiceState("missing"); return; }
+      if (!response.ok) { setVoiceState("error"); return; }
+      const payload = await response.json() as { audio: string };
+      const audio = new Audio(`data:audio/wav;base64,${payload.audio}`); audioRef.current = audio;
+      audio.onended = () => setVoiceState("idle"); audio.onerror = () => setVoiceState("error");
+      setVoiceState("speaking"); await audio.play();
+    } catch { setVoiceState("error"); }
+  }
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#061816] text-[#f4f4ec]">
@@ -115,14 +136,14 @@ export default function Home() {
         </section>
 
         <section className="order-1 self-start rounded-[2rem] border border-white/10 bg-[#0c2421]/95 p-5 shadow-2xl shadow-black/30 backdrop-blur sm:p-7 lg:order-2 lg:sticky lg:top-5">
-          {!created ? <CheckInPanel checkIn={checkIn} update={update} onCreate={() => setCreated(true)} /> : <ResultPanel checkIn={checkIn} result={result} matchScore={matchScore} outcomes={outcomes} coachSignal={coachSignal} setCoachSignal={setCoachSignal} onAdjust={() => setCreated(false)} onStart={startGuided} />}
+          {!created ? <CheckInPanel checkIn={checkIn} update={update} onCreate={() => setCreated(true)} /> : <ResultPanel checkIn={checkIn} result={result} matchScore={matchScore} outcomes={outcomes} coachSignal={coachSignal} setCoachSignal={setCoachSignal} voiceLanguage={voiceLanguage} setVoiceLanguage={setVoiceLanguage} voiceEnabled={voiceEnabled} setVoiceEnabled={setVoiceEnabled} onAdjust={() => setCreated(false)} onStart={startGuided} />}
         </section>
       </div>
 
       <Dialog open={guided} onOpenChange={setGuided}>
         <DialogContent showCloseButton={!completed} className="max-w-xl overflow-hidden rounded-[2rem] border-white/10 bg-[#071b18] p-0 text-[#f4f4ec] shadow-2xl">
           {!completed ? <div className="p-6 sm:p-9">
-            <DialogHeader><div className="mb-8 flex items-center justify-between text-sm text-[#93aaa4]"><span>{result.intervention.title}</span><span>{formatTime(secondsLeft)}</span></div><DialogTitle className="sr-only">Guided adaptive reset</DialogTitle><DialogDescription className="sr-only">Follow the current step until the timer completes.</DialogDescription></DialogHeader>
+            <DialogHeader><div className="mb-8 flex items-center justify-between text-sm text-[#93aaa4]"><span>{result.intervention.title}</span><span className="flex items-center gap-3"><button onClick={() => speakStep(result.intervention.steps[activeStep])} className="flex items-center gap-1.5 text-[#b8ff5c] hover:text-white" aria-label="Replay Sarvam voice cue">{voiceState === "loading" ? <LoaderCircle className="size-4 animate-spin" /> : <Volume2 className="size-4" />}{voiceState === "missing" ? "Connect Sarvam key" : voiceState === "error" ? "Voice unavailable" : voiceState === "speaking" ? "Speaking" : "Replay"}</button><span>{formatTime(secondsLeft)}</span></span></div><DialogTitle className="sr-only">Guided adaptive reset</DialogTitle><DialogDescription className="sr-only">Follow the current step until the timer completes.</DialogDescription></DialogHeader>
             <div className="mx-auto grid size-48 place-items-center rounded-full border border-[#b8ff5c]/20 bg-[radial-gradient(circle,rgba(184,255,92,.16),transparent_64%)] sm:size-60"><div className="pulse-orb grid size-32 place-items-center rounded-full bg-[#b8ff5c] text-center text-[#061816] shadow-[0_0_60px_rgba(184,255,92,.18)] sm:size-40"><div><p className="text-xs font-semibold uppercase tracking-[.18em] opacity-60">Step {activeStep + 1}</p><p className="mt-1 text-2xl font-semibold">{activeStep === 0 ? "Arrive" : activeStep === 1 ? "Shift" : "Choose"}</p></div></div></div>
             <p className="mx-auto mt-8 max-w-sm text-center text-xl font-medium leading-8">{result.intervention.steps[activeStep]}</p>
             <Progress value={timerProgress} className="mt-9 h-1.5 bg-white/10 [&_[data-slot=progress-indicator]]:bg-[#b8ff5c]" />
@@ -153,7 +174,7 @@ function CheckInPanel({ checkIn, update, onCreate }: { checkIn: CheckIn; update:
   </div>;
 }
 
-function ResultPanel({ checkIn, result, matchScore, outcomes, coachSignal, setCoachSignal, onAdjust, onStart }: { checkIn: CheckIn; result: ReturnType<typeof recommend>; matchScore: number; outcomes: Outcome[]; coachSignal: boolean; setCoachSignal: (value: boolean) => void; onAdjust: () => void; onStart: () => void }) {
+function ResultPanel({ checkIn, result, matchScore, outcomes, coachSignal, setCoachSignal, voiceLanguage, setVoiceLanguage, voiceEnabled, setVoiceEnabled, onAdjust, onStart }: { checkIn: CheckIn; result: ReturnType<typeof recommend>; matchScore: number; outcomes: Outcome[]; coachSignal: boolean; setCoachSignal: (value: boolean) => void; voiceLanguage: string; setVoiceLanguage: (value: string) => void; voiceEnabled: boolean; setVoiceEnabled: (value: boolean) => void; onAdjust: () => void; onStart: () => void }) {
   const average = result.matches ? result.averageShift.toFixed(1) : "—";
   return <div className="flex min-h-[650px] flex-col">
     <div className="mb-6 flex items-center justify-between"><button onClick={onAdjust} className="text-sm text-[#93aaa4] hover:text-white">← Adjust check-in</button><span className="rounded-full border border-[#b8ff5c]/25 bg-[#b8ff5c]/10 px-3 py-1 text-xs text-[#b8ff5c]">{matchScore}% match</span></div>
@@ -164,7 +185,10 @@ function ResultPanel({ checkIn, result, matchScore, outcomes, coachSignal, setCo
     <div className="grid grid-cols-3 gap-2"><Metric label="Past matches" value={result.matches} /><Metric label="Avg shift" value={average} accent /><Metric label="Local outcomes" value={outcomes.length} /></div>
     <button onClick={() => setCoachSignal(!coachSignal)} className="mt-4 flex w-full items-center justify-between rounded-xl border border-white/10 px-4 py-3 text-left text-sm text-[#a9bbb6] hover:border-white/25"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-[#b8ff5c]" />Preview human handoff</span><ChevronRight className={`size-4 transition ${coachSignal ? "rotate-90" : ""}`} /></button>
     {coachSignal && <div className="mt-2 rounded-xl border border-[#b8ff5c]/20 bg-[#b8ff5c]/[.06] p-4"><p className="text-xs uppercase tracking-[.14em] text-[#78908a]">Privacy-safe coach signal</p><p className="mt-2 text-sm leading-6">High {result.pillar} signal · load {checkIn.mentalLoad}/10 · energy {checkIn.energy}/10 · {checkIn.minutes}-minute capacity · best local response {average} points.</p><p className="mt-2 text-xs text-[#78908a]">No identity, journal text, or raw history. Nothing is sent automatically.</p></div>}
-    <div className="mt-auto pt-6"><div className="mb-3 flex items-center gap-2 text-sm text-[#93aaa4]"><Clock3 className="size-4" />Designed for {checkIn.minutes} minute{checkIn.minutes === 1 ? "" : "s"}</div><Button onClick={onStart} className="h-14 w-full rounded-xl bg-[#b8ff5c] text-base font-semibold text-[#061816] hover:bg-[#cdfd8f]">Start adaptive reset <ArrowRight /></Button></div>
+    <div className="mt-auto pt-5">
+      <div className="mb-3 rounded-xl border border-white/10 bg-white/[.025] p-3"><div className="mb-2 flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-medium text-[#b8ff5c]"><Headphones className="size-4" />Sarvam Voice Guide</span><button onClick={() => setVoiceEnabled(!voiceEnabled)} className={`rounded-full px-2.5 py-1 text-[11px] ${voiceEnabled ? "bg-[#b8ff5c] text-[#061816]" : "bg-white/10 text-[#93aaa4]"}`}>{voiceEnabled ? "On" : "Off"}</button></div><div className="grid grid-cols-5 gap-1">{voiceLanguages.map(language => <button key={language.code} onClick={() => { setVoiceLanguage(language.code); setVoiceEnabled(true); }} className={`rounded-lg border py-1.5 text-xs ${voiceLanguage === language.code ? "border-[#b8ff5c] text-[#b8ff5c]" : "border-white/10 text-[#78908a]"}`}>{language.label}</button>)}</div></div>
+      <div className="mb-3 flex items-center gap-2 text-sm text-[#93aaa4]"><Clock3 className="size-4" />Designed for {checkIn.minutes} minute{checkIn.minutes === 1 ? "" : "s"}</div><Button onClick={onStart} className="h-14 w-full rounded-xl bg-[#b8ff5c] text-base font-semibold text-[#061816] hover:bg-[#cdfd8f]">Start adaptive reset <ArrowRight /></Button>
+    </div>
   </div>;
 }
 
