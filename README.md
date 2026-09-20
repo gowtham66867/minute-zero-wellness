@@ -6,7 +6,7 @@ Minute Zero is an adaptive wellness response layer for the moment before a perso
 
 [Open Minute Zero](https://minute-zero-wellness.trilogy-1207.chatgpt.site)
 
-The deployed demo may require ChatGPT sign-in. The newest Sarvam Voice Guide code is included in this repository and is ready to deploy once its server-side API key is configured in the hosting workspace.
+The deployed demo is public and does not require ChatGPT sign-in. Sarvam Voice Guide is included in this repository and activates when a valid server-side API key is configured.
 
 ## The problem
 
